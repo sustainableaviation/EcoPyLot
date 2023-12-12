@@ -9,7 +9,7 @@ conda:
    environment: docs/environment.yaml
 
 sphinx:
-   configuration: docs/source/conf.py
+   configuration: docs/conf.py
 
 submodules:
    include: all 

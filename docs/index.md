@@ -6,3 +6,11 @@ This is the documentation for EcoPyLot.
 :width: 800px
 :align: center
 ```
+
+```{toctree}
+---
+hidden:
+maxdepth: 1
+---
+content/theory
+```

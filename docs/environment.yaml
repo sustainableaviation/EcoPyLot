@@ -16,5 +16,6 @@ dependencies:
   - sphinx-notfound-page=1.0.0 # custom 404 page # https://anaconda.org/conda-forge/sphinx-notfound-page/files
   - sphinx-favicon=1.0.1 # for custom favicons # https://anaconda.org/conda-forge/sphinx-favicon/files
   - sphinx-copybutton=0.5.2 # for copy button in code blocks # https://anaconda.org/conda-forge/sphinx-copybutton/files
+  - sphinxcontrib-bibtex=2.6.1 # for scientific literature references # https://anaconda.org/conda-forge/sphinxcontrib-bibtex
   # build process
   - sphinx-autobuild=2021.3.14 # live-html support # https://anaconda.org/conda-forge/sphinx-autobuild/files

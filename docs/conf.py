@@ -40,6 +40,8 @@ extensions = [
     'sphinx_favicon',
     # copy button on code blocks
     "sphinx_copybutton",
+    # scientific literature citations
+    'sphinxcontrib.bibtex',
 ]
 
 root_doc = 'index'
@@ -108,6 +110,13 @@ html_context = {
 ####################################################################################################
 ### Extension Configuration ########################################################################
 ####################################################################################################
+
+# sphinxcontrib.bibtex Configuration ###################################
+# https://sphinxcontrib-bibtex.readthedocs.io/en/latest/quickstart.html#installation
+
+bibtex_bibfiles = ['./bibliography.bib']
+bibtex_default_style = 'plain'
+bibtex_reference_style = 'label'
 
 # linkcheck Configuration ###############################################
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-the-linkcheck-builder

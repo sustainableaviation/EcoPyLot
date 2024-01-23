@@ -13,4 +13,5 @@ hidden:
 maxdepth: 1
 ---
 content/theory
+content/structure
 ```

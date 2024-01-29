@@ -42,6 +42,7 @@ extensions = [
     "sphinx_copybutton",
     # scientific literature citations
     'sphinxcontrib.bibtex',
+    'sphinxcontrib.mermaid'
 ]
 
 root_doc = 'index'

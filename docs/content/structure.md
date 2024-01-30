@@ -1,29 +1,16 @@
-# Data Ingestion Pipeline
+# Program Structure
 
-JSON file fomat is used to ingest data into EcoPyLot. The format of the input JSON file and the ouput DataFrame along with the Unique Dictionary ouput in specified below.
+## Input Data
 
-```{mermaid}
-graph LR
-    A[JSON Input] --> B[EcoPyLot]
-    B --> C[Static DataFrame Output]
-    B --> D[Stochastic DataFrame Output]
-    C --> E[Unique Dictionary Output]
-    D --> E
-    style A fill:#f9d,stroke:#333,stroke-width:2px
-    style B fill:#fc0,stroke:#333,stroke-width:2px
-    style C fill:#9cf,stroke:#333,stroke-width:2px
-    style D fill:#9cf,stroke:#333,stroke-width:2px
-    style E fill:#9f9,stroke:#333,stroke-width:2px
-```
+_EcoPylot_ calculates the environmental impact of aircraft based on a set of parameters that describe the aircraft. Some of these parameters are the different aircraft sub-efficiencies, the number of seats per aircraft, etc. Each parameter is associated with a set of aircraft metadata, such as the year of production, fuselage type, energy source, etc:
 
-## JSON Input
-
-The JSON input is a dictionary where each key is a unique identifier (UID) for a set of parameters. Each UID maps to another dictionary containing the following keys:
+### Parameters and Metadata
 
 - `parameter` (string): The parameter name.
-- `year` (integer): The year.
-- `fuselage` (string): The type of fuselage.
-- `energy source` (string): The energy source.
+
+- `year` (integer): The year of production.
+- `fuselage` (string): The type of fuselage (TW, BWB, SBW, etc.).
+- `energy source` (string): The energy source (H2, Battery, Kerosene, etc.).
 - `energy conversion` (string): The energy conversion method.
 - `Transmission` (string): The transmission type.
 - `Propulsor` (string): The propulsor type.
@@ -39,17 +26,22 @@ The JSON input is a dictionary where each key is a unique identifier (UID) for a
 - `url` (string): The URL of the source.
 - `comment` (string): Any additional comments.
 
-### Example
+`parameters` and `metadata` are ingested into _EcoPyLot_ from a JSON file. This JSON data is then transformed by _EcoPyLot_ to a tabulated format and stored as a [Pandas DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html).
 
-Here is an example of a JSON input:
+### JSON Input Schema
+
+The input file must be formatted in accordance with [JSON syntax](https://www.json.org/json-en.html). An example `parameter`/`metadata` pair:
 
 ```json
 {
-    "<someJSON UID>": {
+    "seats_2050_test": {
         "parameter": "seats",
-        "year": 2000,
+        "year": 2050,
         "fuselage": "TW",
-        "energy source": "H2",
+        "energy source": [
+            "H2",
+            "Battery"
+        ],
         "energy conversion": "FC",
         "Transmission": "Elec",
         "Propulsor": "Prop",
@@ -62,22 +54,20 @@ Here is an example of a JSON input:
             "Small Wide Body",
             "Large Wide Body"
         ],
-        "amount": 75,
-        "loc": 75,
+        "amount": 150,
+        "loc": 150,
         "minimum": 50,
-        "maximum": 100,
+        "maximum": 200,
         "kind": "distribution",
         "uncertainty_type": 5,
         "source": "Cox et al. (2018)",
         "url":  "https://doi.org/10.1016/j.trd.2017.10.017",
-        "comment": "for testing purposes only"
+        "comment": "Test entry only!"
     }
 }
 ```
 
-## DataFrame Output
-The output from EcoPyLot is a DataFrame, either a [Static DataFrame](#static-dataframe-output) or [Stochastic DataFrame](#stochastic-dataframe-output). In addition it also generates a [Unique Dictionary](#unique-dictionary-output) as output.
-
+## Tabulated Data
 
 ### Static DataFrame Output
 

@@ -7,6 +7,10 @@ import pathlib
 # debugging
 import logging
 
+# local imports
+import ecopylot.utils as utils
+
+
 def _load_json(json_input: str | pathlib.PurePath) -> dict:
     """
     Unpacks JSON data from a file or a string.
@@ -87,10 +91,10 @@ def _parse_json(json_data: dict) -> pd.DataFrame:
 
     Pandas DataFrame:
     
-    | UID | parameter | value | loc | min  | max  | uncertainty | metadata1         | metadata2           | ... |
-    |-----|-----------|-------|-----|------|------|-------------|-------------------|---------------------|-----|
-    | 123 | foo       | 11    | 11  | 5    | 13   | 4           | ["alpha", "beta"] | "gamma"             | ... |
-    | 456 | bar       | 6     | 6   | None | None | 1           | "beta"            | ["gamma", "delta"]  | ... |
+    | UID (=index) | parameter | value | loc | min  | max  | uncertainty | metadata1         | metadata2           | ... |
+    |--------------|-----------|-------|-----|------|------|-------------|-------------------|---------------------|-----|
+    | 123          | foo       | 11    | 11  | 5    | 13   | 4           | ["alpha", "beta"] | "gamma"             | ... |
+    | 456          | bar       | 6     | 6   | None | None | 1           | "beta"            | ["gamma", "delta"]  | ... |
 
 
     Parameters
@@ -116,7 +120,7 @@ def _parse_json(json_data: dict) -> pd.DataFrame:
     df = pd.DataFrame.from_dict(json_data, orient="index")
     df = df.rename_axis('UID')
 
-    logging.info(f"JSON data parsed successfully (#entries: {len(df)}, size in memory: {sys.getsizeof(df)} bytes)")
+    logging.info(f"JSON data parsed to pd.DataFrame successfully (#entries: {len(df)}, size in memory: {sys.getsizeof(df)} bytes)")
 
     return df
 

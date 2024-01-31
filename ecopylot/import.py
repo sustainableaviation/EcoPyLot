@@ -108,10 +108,6 @@ def _parse_json(json_data: dict) -> pd.DataFrame:
     -------
     pandas.DataFrame
         A Pandas DataFrame containing the parsed JSON data.
-
-    See Also
-    --------
-    `stats_arrays uncertainty types <https://stats-arrays.readthedocs.io/en/latest/index.html?highlight=stats_arrays%20distributions#mapping-parameter-array-columns-to-uncertainty-distributions>`_.
     """
 
     if not isinstance(json_data, dict):

@@ -1,22 +1,12 @@
 # %%
 # data science
 import pandas as pd
-import numpy as np
-# import stats_arrays as sa # for uncertainty distributions
 # system
 import json
 import pathlib
 # debugging
 import logging
-# project configuration
-import configparser
-import tomllib
 
-
-# load project configuration file
-config: dict = tomllib.load(open(pathlib.Path(__file__).parent/"configuration.toml", "rb"))
-
-# %%
 def _load_json(json_input: str | pathlib.PurePath) -> dict:
     """
     Unpacks JSON data from a file or a string.
@@ -80,8 +70,8 @@ def _parse_json(json_data: dict) -> pd.DataFrame:
             "min": 5,
             "max": 13,
             "uncertainty": 4,
-            "metadata1": ["ε", "β"],
-            "metadata2": "μ"
+            "metadata1": ["alpha", "beta"],
+            "metadata2": "gamma"
         },
         "456": {
             "parameter": "bar",
@@ -90,17 +80,17 @@ def _parse_json(json_data: dict) -> pd.DataFrame:
             "min": None,
             "max": None,
             "uncertainty": 1,
-            "metadata1": "β",
-            "metadata2": ["μ", "θ"]
+            "metadata1": "beta",
+            "metadata2": ["gamma", "delta"]
         }
     }
 
     Pandas DataFrame:
     
-    | UID | parameter | value | loc | min  | max  | uncertainty | metadata1  | metadata2   | ... |
-    |-----|-----------|-------|-----|------|------|-------------|------------|-------------|-----|
-    | 123 | foo       | 11    | 11  | 5    | 13   | 4           | ["ε", "β"] | "β"         | ... |
-    | 456 | bar       | 6     | 6   | None | None | 1           | "μ"        | ["μ", "θ"]  | ... |
+    | UID | parameter | value | loc | min  | max  | uncertainty | metadata1         | metadata2           | ... |
+    |-----|-----------|-------|-----|------|------|-------------|-------------------|---------------------|-----|
+    | 123 | foo       | 11    | 11  | 5    | 13   | 4           | ["alpha", "beta"] | "gamma"             | ... |
+    | 456 | bar       | 6     | 6   | None | None | 1           | "beta"            | ["gamma", "delta"]  | ... |
 
 
     Parameters
@@ -123,4 +113,39 @@ def _parse_json(json_data: dict) -> pd.DataFrame:
     if not isinstance(json_data, dict):
         raise ValueError("Parameters/Metadata are not of correct type (expected `dict`, got `{}`)".format(type(parameters)))
     
-    
+    df = pd.DataFrame.from_dict(json_data, orient="index")
+    df = df.rename_axis('UID')
+
+    logging.info(f"JSON data parsed successfully (#entries: {len(df)}, size in memory: {sys.getsizeof(df)} bytes)")
+
+    return df
+
+
+def load_data_from_json(json_input: str | pathlib.PurePath) -> pd.DataFrame:
+    """
+    Loads data from a JSON file or string.
+
+    This method loads data from a JSON file or string and returns a Pandas DataFrame.
+    It uses the _load_json() method to parse the JSON data and the _parse_json() method
+    to convert the parsed JSON data into a Pandas DataFrame.
+
+    Parameters
+    ----------
+    json_input : str or pathlib.PurePath
+        A JSON string or a path to a JSON file.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A Pandas DataFrame containing the parsed JSON data.
+
+    See Also
+    --------
+    _load_json : Unpacks JSON data from a file or a string.
+    _parse_json : Parses JSON data into a Pandas DataFrame.
+    """
+
+    json_data = _load_json(json_input)
+    df = _parse_json(json_data)
+
+    return df

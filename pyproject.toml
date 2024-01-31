@@ -1,0 +1,20 @@
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
+
+[project]
+name = "EcoPylot"
+dynamic = ["version"]
+requires-python = ">= 3.11"
+
+readme = "README.md"
+license = {file = "LICENSE"}
+
+
+authors = [
+  {name = "Michael Weinold", email = ""},
+]
+
+dependencies = [
+  "pandas",
+  "numpy",
+  "stats_arrays"
+]

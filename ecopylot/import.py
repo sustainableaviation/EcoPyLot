@@ -1,12 +1,22 @@
+# %%
 # data science
 import pandas as pd
-import json
+import numpy as np
+# import stats_arrays as sa # for uncertainty distributions
 # system
+import json
 import pathlib
 # debugging
 import logging
+# project configuration
+import configparser
+import tomllib
 
 
+# load project configuration file
+config: dict = tomllib.load(open(pathlib.Path(__file__).parent/"configuration.toml", "rb"))
+
+# %%
 def _load_json(json_input: str | pathlib.PurePath) -> dict:
     """
     Unpacks JSON data from a file or a string.
@@ -57,17 +67,60 @@ def _parse_json(json_data: dict) -> pd.DataFrame:
     Parses JSON data into a Pandas DataFrame.
 
     This method converts a dictionary representation of JSON data into a
-    Pandas DataFrame, expanding lists into multiple rows and including other
-    attributes in each row.
+    Pandas DataFrame, expanding JSON objects (=parameter/metadata pairs)
+    rows according to the logic:
+
+    JSON input:
+
+    {
+        "123": {
+            "parameter": "foo",
+            "value": 11,
+            "loc": 11,
+            "min": 5,
+            "max": 13,
+            "uncertainty": 4,
+            "metadata1": ["ε", "β"],
+            "metadata2": "μ"
+        },
+        "456": {
+            "parameter": "bar",
+            "value": 6,
+            "loc": 6,
+            "min": None,
+            "max": None,
+            "uncertainty": 1,
+            "metadata1": "β",
+            "metadata2": ["μ", "θ"]
+        }
+    }
+
+    Pandas DataFrame:
+    
+    | UID | parameter | value | loc | min  | max  | uncertainty | metadata1  | metadata2   | ... |
+    |-----|-----------|-------|-----|------|------|-------------|------------|-------------|-----|
+    | 123 | foo       | 11    | 11  | 5    | 13   | 4           | ["ε", "β"] | "β"         | ... |
+    | 456 | bar       | 6     | 6   | None | None | 1           | "μ"        | ["μ", "θ"]  | ... |
+
 
     Parameters
     ----------
     json_data : dict
-        A dictionary representation of the JSON data, as returned by the
-        _load_json() method.
+        A dictionary representation of the JSON data,
+        as returned by the _load_json() method.
+
 
     Returns
     -------
     pandas.DataFrame
         A Pandas DataFrame containing the parsed JSON data.
+
+    See Also
+    --------
+    `stats_arrays uncertainty types <https://stats-arrays.readthedocs.io/en/latest/index.html?highlight=stats_arrays%20distributions#mapping-parameter-array-columns-to-uncertainty-distributions>`_.
     """
+
+    if not isinstance(json_data, dict):
+        raise ValueError("Parameters/Metadata are not of correct type (expected `dict`, got `{}`)".format(type(parameters)))
+    
+    

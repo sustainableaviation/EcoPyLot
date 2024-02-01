@@ -36,8 +36,6 @@ def _add_distribution_dict_column(df: pd.DataFrame) -> pd.DataFrame:
     +-------------+-----------+-----+------------------+-----+-----+------+-------+-------+
     | 456         | bar       | ... | 5                | 8.4 | 2   | 11.2 | NaN   | NaN   |
     +-------------+-----------+-----+------------------+-----+-----+------+-------+-------+
-    | 789         | baz       | ... | 2                | 2.3 | 0.1 | 5.5  | 0.3   | NaN   |
-    +-------------+-----------+-----+------------------+-----+-----+------+-------+-------+
     
     and adds a column ``parameter_value_distribution_dict`` to return a dataframe of the form:
 
@@ -47,8 +45,6 @@ def _add_distribution_dict_column(df: pd.DataFrame) -> pd.DataFrame:
     | 123         | foo       | ... | {"loc": 0.1}                                       |
     +-------------+-----------+-----+----------------------------------------------------+
     | 456         | bar       | ... | {"loc": 8.4, "min": 2, "max": 11.2}                |
-    +-------------+-----------+-----+----------------------------------------------------+
-    | 789         | baz       | ... | {"loc": 2.3, "min": 0.1, "max": 5.5, "scale": 0.3} |
     +-------------+-----------+-----+----------------------------------------------------+
 
     Parameters
@@ -96,7 +92,7 @@ def _sample_parameters_from_distrivution(df: pd.DataFrame, iterations: int) -> p
     Adds a stochastic column to the dataframe.
 
     The function takes a dataframe of the form
-    (provided by :py:function:`_add_distribution_dict_column`):
+    (provided by `_add_distribution_dict_column`):
 
     +-------------+-----------+-----+----------------------------------------------------------------------+
     | UID (index) | parameter | ... | parameter_value_distribution_dict                                    |
@@ -147,8 +143,6 @@ def generate_stochastic_dataframe(df: pd.DataFrame, iterations: int) -> pd.DataF
     | 123         | foo       | ... | 1                | 0.1 | NaN | NaN  | NaN   | NaN   |
     +-------------+-----------+-----+------------------+-----+-----+------+-------+-------+
     | 456         | bar       | ... | 5                | 8.4 | 2   | 11.2 | NaN   | NaN   |
-    +-------------+-----------+-----+------------------+-----+-----+------+-------+-------+
-    | 789         | baz       | ... | 2                | 2.3 | 0.1 | 5.5  | 0.3   | NaN   |
     +-------------+-----------+-----+------------------+-----+-----+------+-------+-------+
 
     and, depending on the variable ``iterations``, adds a column ``stochastic``.

@@ -15,7 +15,7 @@ def _load_json(json_input: str | pathlib.PurePath) -> dict:
     """
     Unpacks JSON data from a file or a string.
 
-    This method parses JSON data using the json.loads() method for strings
+    The function parses JSON data using the json.loads() method for strings
     and the json.load() method for files.
     It returns a dictionary representation of the JSON data, according to the
     `json.JSONDecoder conversion table <https://docs.python.org/3/library/json.html#encoders-and-decoders>`_.
@@ -60,42 +60,44 @@ def _parse_json(json_data: dict) -> pd.DataFrame:
     """
     Parses JSON data into a Pandas DataFrame.
 
-    This method converts a dictionary representation of JSON data into a
-    Pandas DataFrame, expanding JSON objects (=parameter/metadata pairs)
-    rows according to the logic:
+    The function converts a dictionary representation of JSON data into a
+    Pandas DataFrame, expanding JSON objects (=`parameter`/`metadata` pairs)
+    into rows. The JSON data is expected to be of the form:
 
-    JSON input:
+    .. code-block:: json
 
-    {
-        "123": {
-            "parameter": "foo",
-            "value": 11,
-            "loc": 11,
-            "min": 5,
-            "max": 13,
-            "uncertainty": 4,
-            "metadata1": ["alpha", "beta"],
-            "metadata2": "gamma"
-        },
-        "456": {
-            "parameter": "bar",
-            "value": 6,
-            "loc": 6,
-            "min": None,
-            "max": None,
-            "uncertainty": 1,
-            "metadata1": "beta",
-            "metadata2": ["gamma", "delta"]
+        {
+            "123": {
+                "parameter": "foo",
+                "value": 11,
+                "loc": 11,
+                "minimum": 5,
+                "maximum": 13,
+                "uncertainty": 4,
+                "metadata1": ["alpha", "beta"],
+                "metadata2": "gamma"
+            },
+            "456": {
+                "parameter": "bar",
+                "value": 6,
+                "loc": 6,
+                "minimum": null,
+                "maximum": null,
+                "uncertainty": 1,
+                "metadata1": "beta",
+                "metadata2": ["gamma", "delta"]
+            }
         }
-    }
 
-    Pandas DataFrame:
+    The function will return a DataFrame of the form:
     
+    +--------------+-----------+-------+-----+------+------+-------------+-------------------+---------------------+-----+
     | UID (=index) | parameter | value | loc | min  | max  | uncertainty | metadata1         | metadata2           | ... |
-    |--------------|-----------|-------|-----|------|------|-------------|-------------------|---------------------|-----|
+    +==============+===========+=======+=====+======+======+=============+===================+=====================+=====+
     | 123          | foo       | 11    | 11  | 5    | 13   | 4           | ["alpha", "beta"] | "gamma"             | ... |
+    +--------------+-----------+-------+-----+------+------+-------------+-------------------+---------------------+-----+
     | 456          | bar       | 6     | 6   | None | None | 1           | "beta"            | ["gamma", "delta"]  | ... |
-
+    +--------------+-----------+-------+-----+------+------+-------------+-------------------+---------------------+-----+
 
     Parameters
     ----------
@@ -123,11 +125,46 @@ def _parse_json(json_data: dict) -> pd.DataFrame:
 
 def load_data_from_json(json_input: str | pathlib.PurePath) -> pd.DataFrame:
     """
-    Loads data from a JSON file or string.
+    Loads data from a JSON file or string into a DataFrame.
 
-    This method loads data from a JSON file or string and returns a Pandas DataFrame.
-    It uses the _load_json() method to parse the JSON data and the _parse_json() method
-    to convert the parsed JSON data into a Pandas DataFrame.
+    The function converts a string or file containing JSON data into a
+    Pandas DataFrame, expanding JSON objects (=`parameter`/`metadata` pairs)
+    into rows. The JSON data is expected to be of the form:
+
+    .. code-block:: json
+
+        {
+            "123": {
+                "parameter": "foo",
+                "value": 11,
+                "loc": 11,
+                "minimum": 5,
+                "maximum": 13,
+                "uncertainty": 4,
+                "metadata1": ["alpha", "beta"],
+                "metadata2": "gamma"
+            },
+            "456": {
+                "parameter": "bar",
+                "value": 6,
+                "loc": 6,
+                "minimum": null,
+                "maximum": null,
+                "uncertainty": 1,
+                "metadata1": "beta",
+                "metadata2": ["gamma", "delta"]
+            }
+        }
+
+    The function will return a DataFrame of the form:
+    
+    +--------------+-----------+-------+-----+------+------+-------------+-------------------+---------------------+-----+
+    | UID (=index) | parameter | value | loc | min  | max  | uncertainty | metadata1         | metadata2           | ... |
+    +==============+===========+=======+=====+======+======+=============+===================+=====================+=====+
+    | 123          | foo       | 11    | 11  | 5    | 13   | 4           | ["alpha", "beta"] | "gamma"             | ... |
+    +--------------+-----------+-------+-----+------+------+-------------+-------------------+---------------------+-----+
+    | 456          | bar       | 6     | 6   | None | None | 1           | "beta"            | ["gamma", "delta"]  | ... |
+    +--------------+-----------+-------+-----+------+------+-------------+-------------------+---------------------+-----+
 
     Parameters
     ----------

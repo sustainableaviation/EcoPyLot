@@ -2,13 +2,11 @@
 # data science
 import pandas as pd
 # system
+import sys
 import json
 import pathlib
 # debugging
 import logging
-
-# local imports
-import ecopylot.utils as utils
 
 
 def _load_json(json_input: str | pathlib.PurePath) -> dict:

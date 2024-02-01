@@ -7,18 +7,19 @@ import stats_arrays as sarrays # for uncertainty distributions
 import pathlib
 # debugging
 import logging
-# project configuration
-import tomllib
 
 # local imports
-import ecopylot.utils as utils
+# import ecopylot.utils as utils
 
-utils.load_project_configuration()
+# utils.load_project_configuration()
 
 
-def _get_dataframe_stats(df: pd.DataFrame) -> dict:
+def get_stats(df: pd.DataFrame) -> dict:
     """
-    Empty function (for now.)
+    Get basic statistics for a dataframe.
+
+    The function returns a dictionary with the following statistics:
+    
     """
     pass
         
@@ -71,18 +72,19 @@ def _add_distribution_dict_column(df: pd.DataFrame) -> pd.DataFrame:
     `stats_arrays uncertainty types <https://stats-arrays.readthedocs.io/en/latest/index.html?highlight=stats_arrays%20distributions#mapping-parameter-array-columns-to-uncertainty-distributions>`_.   
     """
 
-    distributions_columns: list = [
+    distributions_columns_all: list = [
         'loc',
         'scale',
         'shape',
-        'min',
-        'max',
+        'minimum',
+        'maximum',
     ]
+    distribution_columns_present: list = list(set(distributions_columns_all).intersection(df.columns))
 
-    if not set(distributions_columns).issubset(df.columns):
+    if not any(col in df.columns for col in distributions_columns_all):
         raise Exception(f"DataFrame does not contain any of the distribution-related columns: {distributions_columns}")
 
-    df['parameter_value_distribution_dict'] = df[distributions_columns].apply(lambda x: x.dropna().to_dict(), axis=1)
+    df['parameter_value_distribution_dict'] = df[distribution_columns_present].apply(lambda x: x.dropna().to_dict(), axis=1)
 
     return df
 
@@ -115,10 +117,10 @@ def _sample_parameters_from_distrivution(df: pd.DataFrame, iterations: int) -> p
     +-------------+-----------+-----+----------------------------------------------------+
     """
 
-    if 'stochastic_dict' not in df.columns:
-        raise ValueError("DataFrame does not have 'stochastic_dict' column")
+    if 'parameter_value_distribution_dict' not in df.columns:
+        raise ValueError("DataFrame does not have 'parameter_value_distribution_dict' column")
 
-    list_of_dicts: list = list(df['stochastic_dict'])
+    list_of_dicts: list = list(df['parameter_value_distribution_dict'])
 
     parameters: np.ndarray = sarrays.UncertaintyBase.from_dicts(*list_of_dicts)
     

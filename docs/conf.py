@@ -31,7 +31,7 @@ extensions = [
     # Markdown support
     'myst_parser', # do not enable separately if using myst_nb, compare: https://github.com/executablebooks/MyST-NB/issues/421#issuecomment-1164427544
     # API documentation support
-    # 'autoapi',
+    'autoapi',
     # responsive web component support
     'sphinx_design',
     # custom 404 page
@@ -144,7 +144,35 @@ notfound_context = {
 # autoapi Configuration ################################################
 # https://sphinx-autoapi.readthedocs.io/en/latest/reference/config.html#customisation-options
 
-autoapi_dirs = []
+autoapi_dirs = ['../ecopylot']
+
+autoapi_ignore = [
+    '*/data/*',
+    '*tests/*',
+    '*tests.py',
+    '*validation.py',
+    '*version.py',
+    '*.rst',
+    '*.yml',
+    '*.md',
+    '*.json',
+    '*.data'
+]
+
+autoapi_options = [
+    'members',
+    'undoc-members',
+    'private-members',
+    'show-inheritance',
+    'show-module-summary',
+    #'special-members',
+    #'imported-members',
+    # 'show-inheritance-diagram'
+]
+
+autoapi_python_class_content = 'both'
+autoapi_member_order = 'groupwise'
+autoapi_keep_files = False
 
 # myst_parser Configuration ############################################
 # https://myst-parser.readthedocs.io/en/latest/configuration.html

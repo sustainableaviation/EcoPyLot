@@ -2,25 +2,30 @@
 # performance
 import time
 import timeit
+# io
+from pathlib import Path
 # data science
 import pandas as pd
 import numpy as np
 # Carculator
 import carculator as carc
 # EcoPylot
-from ecopylot import inputoutput
-from ecopylot import statistics
+import sys
+sys.path.append("/Users/michaelweinold/github/EcoPyLot/ecopylot")
+import inputoutput
+import stats
 
 
-def carculator_data_import(iterations:int):
+def carculator_data_import(iterations:int) -> None:
     cip = carc.CarInputParameters()
-    cip.stochastic(iterations = int(iterations)) # force cast to integer
+    cip.stochastic(iterations = int(iterations)) # force cast to integer to avoid errors
     dcts, array = carc.fill_xarray_from_input_parameters(cip)
 
 
-def ecopylot_data_import(iterations:int):
+def ecopylot_data_import(iterations:int) -> None:
+    filep = Path('/Users/michaelweinold/github/carculator/carculator/data/default_parameters.json')
     df = inputoutput.load_data_from_json(filep)
-    statistics.generate_stochastic_dataframe(df = df, iterations = iterations)
+    stats.generate_stochastic_dataframe(df = df, iterations = iterations)
 
 
 def measure_function_time(
@@ -75,3 +80,39 @@ df_time_measured.plot.bar(
     x = "iterations",
     y = "time_carculator",
 )
+
+# %%
+import matplotlib.pyplot as plt
+cm = 1/2.54 # for inches-cm conversion
+
+fig, ax = plt.subplots(
+    num = 'main',
+    nrows = 1,
+    ncols = 1,
+    dpi = 300,
+    figsize=(9*cm, 6*cm), # A4=(210x297)mm,
+)
+
+ax.set_ylabel('Runtime [s]\n MBP(Apple M1 Max, 2021)')
+ax.set_xlabel('Iterations')
+
+ax.set_xticks([i for i in range(len(df_time_measured))])
+ax.set_xticklabels(list(df_time_measured['iterations']))
+
+ax.bar(
+    x = [i-0.2 for i in range(0, len(df_time_measured))],
+    height = df_time_measured['time_carculator'],
+    width = 0.5,
+    color = 'orange',
+    label = 'Carculator'
+)
+ax.bar(
+    x = [i+0.2 for i in range(0, len(df_time_measured))],
+    height = df_time_measured['time_ecopylot'],
+    width = 0.5,
+    color = 'blue',
+    label = 'EcoPylot'
+)
+
+ax.legend()
+ax.set_title('Data Load from JSON')

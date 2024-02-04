@@ -126,7 +126,7 @@ def _sample_parameters_from_distrivution(df: pd.DataFrame, iterations: int) -> p
     
     montecarlogen: sarrays.MCRandomNumberGenerator = sarrays.MCRandomNumberGenerator(parameters)
 
-    parameters_stochastic: np.ndarray = montecarlogen.generate(iterations)
+    parameters_stochastic: np.ndarray = montecarlogen.generate(int(iterations))
 
     df['parameter_value_stochastic'] =  list(parameters_stochastic)
 

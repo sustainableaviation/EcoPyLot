@@ -1,27 +1,42 @@
 # %%
+# performance
+import time
 import timeit
+# data science
 import pandas as pd
 import numpy as np
-import time
-
+# Carculator
 import carculator as carc
-import pandas as pd
+# EcoPylot
+from ecopylot import inputoutput
+from ecopylot import statistics
 
 
-def caculator_data_import(iterations:int):
+def carculator_data_import(iterations:int):
     cip = carc.CarInputParameters()
-    cip.stochastic(iterations = iterations)
+    cip.stochastic(iterations = int(iterations)) # force cast to integer
     dcts, array = carc.fill_xarray_from_input_parameters(cip)
 
+
+def ecopylot_data_import(iterations:int):
+    df = inputoutput.load_data_from_json(filep)
+    statistics.generate_stochastic_dataframe(df = df, iterations = iterations)
+
+
 def measure_function_time(
-    function: callable,
+    stmt: str,
+    setup: str,
     number: int = 1,
     repeat: int = 1,
-    iterations: int = 1000,
 ) -> pd.DataFrame:
+    """
+    Measures the time it takes to run a function.
+
+    Some more docstrings...
+    """
     time_carculator_list: list =  timeit.repeat(
-        stmt = f"caculator_data_import({iterations})",
-        setup = "from __main__ import caculator_data_import",
+        stmt = stmt,
+        setup = setup,
         number = number,
         repeat = repeat,
         timer = time.perf_counter,
@@ -30,6 +45,33 @@ def measure_function_time(
     return time_carculator
 
 
-df_time = pd.DataFrame({'iterations': [1, 10, 1E2, 1E3, 1E4, 1E5]})
+df_time_measured = pd.DataFrame(
+    data = {
+        "iterations": [1E0, 1E1, 1E2, 1E3, 1E4], # carculator will crash above 1E4 iterations
+    }
+)
+df_time_measured['iterations'] = df_time_measured['iterations'].astype(int)
 
-df_time = df_time.apply(lambda row: measure_function_time(calculator_data_import, iterations=row['iterations']), axis=1)
+df_time_measured['time_carculator'] = df_time_measured.apply(
+    lambda x: measure_function_time(
+        stmt = f"carculator_data_import({x['iterations']})",
+        setup = "from __main__ import carculator_data_import",
+        number = 1, 
+        repeat = 1,
+    ),
+    axis = 1
+)
+df_time_measured['time_ecopylot'] = df_time_measured.apply(
+    lambda x: measure_function_time(
+        stmt = f"ecopylot_data_import({x['iterations']})",
+        setup = "from __main__ import ecopylot_data_import",
+        number = 1, 
+        repeat = 1,
+    ),
+    axis = 1
+)
+
+df_time_measured.plot.bar(
+    x = "iterations",
+    y = "time_carculator",
+)

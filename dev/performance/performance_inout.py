@@ -3,6 +3,8 @@
 import time
 import timeit
 # io
+import sys
+import pathlib
 from pathlib import Path
 # data science
 import pandas as pd
@@ -10,21 +12,27 @@ import numpy as np
 # Carculator
 import carculator as carc
 # EcoPylot
-import sys
-sys.path.append("/Users/michaelweinold/github/EcoPyLot/ecopylot")
-import inputoutput
+ecopylot_root: pathlib.PosixPath =  Path(__file__).resolve().parents[2]
+sys.path.append(str(ecopylot_root / 'ecopylot'))
+import inout
 import stats
 
 
 def carculator_data_import(iterations:int) -> None:
+    """
+    Runs the Carculator data import and statistics functions.
+    """
     cip = carc.CarInputParameters()
     cip.stochastic(iterations = int(iterations)) # force cast to integer to avoid errors
     dcts, array = carc.fill_xarray_from_input_parameters(cip)
 
 
 def ecopylot_data_import(iterations:int) -> None:
+    """
+    Runs the EcoPylot data import and statistics functions.
+    """
     filep = Path('/Users/michaelweinold/github/carculator/carculator/data/default_parameters.json')
-    df = inputoutput.load_data_from_json(filep)
+    df = inout.load_data_from_json(filep)
     stats.generate_stochastic_dataframe(df = df, iterations = iterations)
 
 
@@ -37,7 +45,9 @@ def measure_function_time(
     """
     Measures the time it takes to run a function.
 
-    Some more docstrings...
+    See Also
+    --------
+    The Python ` `timeit.repeat` <https://docs.python.org/3/library/timeit.html#timeit.repeat>`_.
     """
     time_carculator_list: list =  timeit.repeat(
         stmt = stmt,
@@ -76,11 +86,6 @@ df_time_measured['time_ecopylot'] = df_time_measured.apply(
     axis = 1
 )
 
-df_time_measured.plot.bar(
-    x = "iterations",
-    y = "time_carculator",
-)
-
 # %%
 import matplotlib.pyplot as plt
 cm = 1/2.54 # for inches-cm conversion
@@ -99,6 +104,8 @@ ax.set_xlabel('Iterations')
 ax.set_xticks([i for i in range(len(df_time_measured))])
 ax.set_xticklabels(list(df_time_measured['iterations']))
 
+ax.set_title('Data Load from JSON')
+
 ax.bar(
     x = [i-0.2 for i in range(0, len(df_time_measured))],
     height = df_time_measured['time_carculator'],
@@ -115,4 +122,13 @@ ax.bar(
 )
 
 ax.legend()
-ax.set_title('Data Load from JSON')
+
+file_path: pathlib.PosixPath = Path(__file__).resolve()
+figure_name: str = str(file_path.stem + '.pdf')
+
+plt.savefig(
+    fname = figure_name,
+    format="pdf",
+    bbox_inches='tight',
+    transparent = False
+)

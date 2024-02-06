@@ -1,8 +1,14 @@
-[schema]
-metadata = [
-    'title',
-    'author',
-]
-
-[uncertainty_distributions]
-
+[uncertainty_distributions_mapping] # https://stats-arrays.readthedocs.io/en/latest/#mapping-parameter-array-columns-to-uncertainty-distributions
+"undefined" = 0
+"no uncertainty" = 1
+"lognormal" = 2
+"normal" = 3
+"uniform" = 4
+"triangular" = 5
+"bernoulli" = 6
+"discrete uniform" = 7
+"weibull" = 8
+"gamma" = 9
+"beta" = 10
+"generalized extreme value" = 11
+"student t" = 12

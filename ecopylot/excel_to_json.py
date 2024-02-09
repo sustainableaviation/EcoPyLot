@@ -6,7 +6,12 @@ import numpy as np
 import inout
 import utils
 
+import pathlib
+from pathlib import Path
+
 config: dict = utils.load_project_configuration()
+
+mypath = Path("/Users/michaelweinold/github/EcoPyLot/dev/other/Input data_bus.xlsx")
 
 # %%
 
@@ -14,24 +19,130 @@ def myfunc(x):
     return str([item.strip() for item in x.split(',')])
 
 
-df = pd.read_excel(
-    io = '/Users/michaelweinold/github/EcoPyLot/dev/other/Input data_bus.xlsx',
-    header=None,
-    engine = 'openpyxl',
-    na_values = ['None', 'none', 'N/A', 'n/a', 'NA', 'na', 'NaN', 'nan', '', ' '],
-    keep_default_na = True,
-    na_filter = True,
-    decimal = '.',
-    #converters = {'powertrain': myfunc}
-)
+def _load_excel(excel_input: pathlib.PurePath) -> pd.DataFrame:
+    """
+    Loads data from an Excel `xls` or `xlsx` file into a DataFrame.
+    """
+
+    if isinstance(excel_input, pathlib.PurePath):
+        pass
+    else:
+        raise TypeError("Input must be a pathlib.PurePath to an Excel file.")
+
+    df = pd.read_excel(
+        io = excel_input,
+        header=None,
+        engine = 'openpyxl',
+        na_values = ['None', 'none', 'N/A', 'n/a', 'NA', 'na', 'NaN', 'nan', '', ' '],
+        keep_default_na = True,
+        na_filter = True,
+        decimal = '.',
+    )
+    return df
+
+
+def _columns_string_to_list(df: pd.DataFrame, list_string_cols: list) -> pd.DataFrame:
+    """
+    Converts the content of columns containing string enumerations to lists.
+
+    The function converts the content of columns containing string enumerations of the form:
+
+    `alpha, beta`
+    
+    into lists of the form:
+
+    `["alpha", "beta"]`
+
+    If the column contains a single value, the function will convert it into a list with a single element.
+    If the data type of the column is not a string, the function will leave it unchanged.
+    """
+    for col in list_string_cols:
+        df[col] = df[col].apply(lambda x: [item.strip() for item in x.split(',')] if isinstance(x, str) else x)
+    return df
+
+
+def _uncertainty_distribution_string_to_code(
+        df: pd.DataFrame,
+        uncertainty_col: str,
+        uncertainty_dict: dict
+    ) -> pd.DataFrame:
+    """
+    """
+    df['uncertainty'] = df[uncertainty_col].replace(uncertainty_dict)
+    return df
+
+# some testing
+
+df = _load_excel(mypath)
 
 # %%
-list_filter = ['heat pump CoP, cooling', 'cooling energy consumption', 'battery cooling unit']
-dff = df[df['parameter'].isin(list_filter)]
 
-df['new'] = df['powertrain'].apply(lambda x: [item for item in x.split(',')] if isinstance(x, str) else x)
-df['new1'] = df['uncertainty distribution'].replace(config['uncertainty_distributions_mapping'])
+df['new1'] = df[9].replace(config['uncertainty_distributions_mapping'])
 # %%
+
+def _stack_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Takes a table of the form:
+
+    |       | parameter | 2001               | 2002               | ... |
+    |       |           | loc  | low  | high | loc  | low  | high | ... |
+    |-------|-----------|------|------|------|------|------|------|-----|
+    | 0     | foo       | 1.5  | 1    | 2    | 8    | 7    | 8.5  | ... |
+    | 1     | bar       | NaN  | NaN  | Nan  | 14   | 12   | 17   | ... |
+
+    and transforms it into a table of the form:
+
+    |       | parameter | year | loc | low | high | ... |
+    |-------|-----------|------|-----|-----|------|-----|
+    | 0     | foo       | 2001 | 1.5 | 1   | 2    | ... |
+    | 1     | foo       | 2002 | 8   | 7   | 8.5  | ... |
+    | 2     | bar       | 2002 | 14  | 12  | 17   | ... |
+
+    Inspired by: https://stackoverflow.com/a/77945979
+    Inspired by: https://pandas.pydata.org/docs/user_guide/reshaping.html#stack-and-unstack
+
+    """
+    df = df.set_index(0).stack().reset_index()
+    return df
+
+
+def _set_dataframe_indices(df: pd.DataFrame) -> pd.DataFrame:
+    """
+
+    Takes a table of the form:
+
+    | index | 0         | 1    | 2    | 3    | 4    | ... |
+    |-------|-----------|------|------|------|------|-----|
+    | 0     | parameter | 2001 | 2001 | 2002 | 2002 | ... |
+    | 1     |           | low  | high | low  | high | ... |
+    | 2     | foo       | 1    | 2    | 7    | 8    | ... |
+    | 3     | bar       | NaN  | NaN  | 12   | 13   | ... |
+
+    and transforms it into a table of the form:
+
+    |       | 2001        | 2002        | ... |
+    |       | low  | high | low  | high | ... |
+    |-------|------|------|------|------|-----|
+    | 0     | 1    | 2    | 7    | 8    | ... |
+    | 1     | NaN  | NaN  | 12   | 13   | ... |
+    """
+
+    index = pd.MultiIndex.from_arrays(
+        arrays = [
+            df.iloc[0, 0:],
+            df.iloc[1, 0:]
+        ],
+        names = (
+            'year',
+            'uncertainty_metrics'
+        )
+    )
+
+    df = df.iloc[2:].set_axis(index, axis=1)
+    df = df.reset_index(drop = True)
+
+    return df
+
 
 # to do: years to 
 

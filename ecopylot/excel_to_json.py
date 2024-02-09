@@ -81,3 +81,52 @@ multiindex = pd.MultiIndex.from_product(
 
 dfyears.columns = multiindex
 dfyears = dfyears.drop([0, 1])
+
+# %%
+
+data = {
+    0: ['parameter', '', 'foo', 'bar'],
+    1: [2001, 'low', 1, np.nan],
+    2: [2001, 'high', 2, np.nan],
+    3: [2002, 'low', 7, 12],
+    4: [2002, 'high', 8, 13],
+}
+
+df = pd.DataFrame(data)
+
+idx = pd.MultiIndex.from_arrays([df.iloc[0, 1:], df.iloc[1, 1:]],
+                                names=('year', None))
+
+out = df.iloc[2:].set_index(0).set_axis(idx, axis=1).rename_axis('parameter').stack(0).reset_index()
+
+# https://stackoverflow.com/a/77945979/7331016
+
+def load_data_from_excel(excel_input: pathlib.PurePath) -> pd.DataFrame:
+    """
+    Loads data from an Excel `xls` or `xlsx` file into a DataFrame.
+
+    The function converts an Excel file containing data into a
+    Pandas DataFrame, doing XYZ XXXXXXXXXXX.
+    The Excel sheet is expected to be of the form (compare also this example file):
+    
+    | index | A         | B              | C                  | D    | E    | F    | G    | H    | I    | ... |
+    |-------|-----------|----------------|--------------------|------|------|------|------|------|------|-----|
+    | 1     | parameter | classification | uncertainty distr. | 2001 | 2021 | 2001 | 2002 | 2002 | 2002 | ... |
+    | 2     |           |                |                    | loc  | low  | high | loc  | low  | high | ... |
+    | 3     | foo       | alpha, beta    | triangular         | 1.5  | 1    | 2    | 8    | 7    | 8.5  | ... |
+    | 4     | bar       | gamma, delta   | triangular         |      |      |      | 14   | 12   | 17   | ... |
+
+    The function will return a DataFrame of the form:
+
+    | index | parameter | year | classification     | uncertainty code | loc | low | high | ... |
+    |-------|-----------|------|--------------------|------------------|-----|-----|------|-----|
+    | 0     | foo       | 2001 | ["alpha", "beta"]  | 5                | 1.5 | 1   | 2    | ... |
+    | 1     | foo       | 2002 | ["alpha", "beta"]  | 5                | 8   | 7   | 8.5  | ... |
+    | 2     | bar       | 2002 | ["gamma", "delta"] | 5                | 14  | 12  | 17   | ... |
+
+    Instead of `loc`, `low`, `high`, other statistical measures can be provided for each year.
+    Compare the `stats_arrays` table for more details:
+    https://stats-arrays.readthedocs.io/en/latest/index.html#mapping-parameter-array-columns-to-uncertainty-distributions
+
+    """
+# %%

@@ -5,6 +5,7 @@ import numpy as np
 #project
 import inout
 import utils
+import sys
 
 import pathlib
 from pathlib import Path
@@ -147,7 +148,10 @@ def _uncertainty_distribution_string_to_code(
     ``stats_arrays` list of uncertainty distributions <https://stats-arrays.readthedocs.io/en/latest/#mapping-parameter-array-columns-to-uncertainty-distributions>`__
 
     """
-    df['uncertainty'] = df[uncertainty_col].replace(uncertainty_dict)
+    try:
+        df['uncertainty'] = df[uncertainty_col].replace(uncertainty_dict).astype('int64')
+    except ValueError:
+        raise Exception("Conversion of uncertainty string desciption to integer code failed. Are your strings valid 'stats_arrays' uncertainty distribution names?")
 
     logging.info(f"Column {uncertainty_col} converted to `stats_arrays` integer codes.")
 
@@ -201,13 +205,6 @@ def _stack_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     We therefore need to remove this row using the `dropna` function.
     """
 
-    # move all string columns to the index
-    # this is to make sure the stack function works only on 'year' columns
-
-    list_cols: list = list(df.columns.get_level_values(0))
-    list_string_cols: list = [item for item in list_cols if isinstance(item, str)]
-    df = df.set_index(keys = list_string_cols)
-
     df = df.stack(
         level = 0, # stack 'year' columns
         future_stack=True # https://pandas.pydata.org/docs/whatsnew/v2.1.0.html#new-implementation-of-dataframe-stack
@@ -222,6 +219,7 @@ def _stack_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     # and reset the index
 
     df = df.reset_index(drop = False)
+    df = df.rename_axis(None, axis=1)
 
     logging.info(f"DataFrame stacked to long-form.")
 
@@ -241,13 +239,15 @@ def _set_dataframe_indices(df: pd.DataFrame) -> pd.DataFrame:
     | 2     | foo       | 1    | 2    | 7    | 8    | ... |
     | 3     | bar       | NaN  | NaN  | 12   | 13   | ... |
 
-    and transforms it into a table of the form:
+    and moves all "string columns" to the index.
+    It then creates a multi-index from the first two rows.
+    The return dataframe is of the form:
 
-    | year                | 2001        | 2002        | ... |
-    | uncertainty_metrics | low  | high | low  | high | ... |
+    |                     | 2001        | 2002        | ... |
+    | parameter           | low  | high | low  | high | ... |
     |---------------------|------|------|------|------|-----|
-    | 0                   | 1    | 2    | 7    | 8    | ... |
-    | 1                   | NaN  | NaN  | 12   | 13   | ... |
+    | foo                 | 1    | 2    | 7    | 8    | ... |
+    | bar                 | NaN  | NaN  | 12   | 13   | ... |
 
     Parameters
     ----------
@@ -260,19 +260,34 @@ def _set_dataframe_indices(df: pd.DataFrame) -> pd.DataFrame:
         The DataFrame with the indices set.
     """
 
-    index = pd.MultiIndex.from_arrays(
+    # move all string columns to the index
+    # this is to make sure the stack function works only on 'year' columns
+    # much pain and suffering will be avoided if we do this
+
+    list_header_1: list = list(df.iloc[0])
+    
+    list_string_column_positions: list = [pos for pos, colname in enumerate(list_header_1) if isinstance(colname, str)]
+    list_string_column_names: list = [colname for pos, colname in enumerate(list_header_1) if isinstance(colname, str)]
+    
+    df = df.set_index(list_string_column_positions)
+    df.index.set_names(list_string_column_names, inplace=True)
+
+    # create a multi-index from the first two rows
+    # this now only captures the year columns
+
+    multiindex = pd.MultiIndex.from_arrays(
         arrays = [
             df.iloc[0, 0:],
             df.iloc[1, 0:]
         ],
         names = (
             'year',
-            'uncertainty_metrics'
+            'uncertainty_metric'
         )
     )
 
-    df = df.iloc[2:].set_axis(index, axis=1)
-    df = df.reset_index(drop = True)
+    df = df.iloc[2:].set_axis(multiindex, axis=1) # iloc[2:] drops the header rows, which have been made a multi-index
+    #df = df.reset_index(drop = False)
 
     logging.info(f"DataFrame indices set to {df.index.names}.")
 
@@ -289,32 +304,53 @@ def load_data_from_excel(
     Loads data from an Excel `xls` or `xlsx` file into a DataFrame.
 
     The function converts an Excel file containing data into a
-    Pandas DataFrame, doing XYZ XXXXXXXXXXX.
-    The Excel sheet is expected to be of the form (compare also this XXXXX example file):
+    Pandas DataFrame, using the `stack` function to make it long-form.
     
-    | index | A         | B              | C                  | D    | E    | F    | G    | H    | I    | ... |
-    |-------|-----------|----------------|--------------------|------|------|------|------|------|------|-----|
-    | 1     | parameter | classification | uncertainty distr. | 2001 | 2001 | 2001 | 2002 | 2002 | 2002 | ... |
-    | 2     |           |                |                    | loc  | low  | high | loc  | low  | high | ... |
-    | 3     | foo       | alpha, beta    | triangular         | 1.5  | 1    | 2    | 8    | 7    | 8.5  | ... |
-    | 4     | bar       | gamma, delta   | triangular         |      |      |      | 14   | 12   | 17   | ... |
+    The Excel sheet is expected to be of the form:
+    
+    +-------+-------------+----------------+--------------------+------+------+------+------+------+------+-----+
+    |       | A           | B              | C                  | D    | E    | F    | G    | H    | I    | ... |
+    +=======+=============+================+====================+======+======+======+======+======+======+=====+
+    | 1     | parameter   | classification | uncertainty distr. | 2001 | 2001 | 2001 | 2002 | 2002 | 2002 | ... |
+    +-------+-------------+----------------+--------------------+------+------+------+------+------+------+-----+
+    | 2     |             |                |                    | loc  | low  | high | loc  | low  | high | ... |
+    +-------+-------------+----------------+--------------------+------+------+------+------+------+------+-----+
+    | 3     | foo         | alpha, beta    | triangular         | 1.5  | 1    | 2    | 8    | 7    | 8.5  | ... |
+    +-------+-------------+----------------+--------------------+------+------+------+------+------+------+-----+
+    | 4     | bar         | gamma, delta   | triangular         |      |      |      | 14   | 12   | 17   | ... |
+    +-------+-------------+----------------+--------------------+------+------+------+------+------+------+-----+
+
 
     The function will return a DataFrame of the form:
 
-    | index | parameter | year | classification     | uncertainty code | loc | low | high | ... |
-    |-------|-----------|------|--------------------|------------------|-----|-----|------|-----|
-    | 0     | foo       | 2001 | ["alpha", "beta"]  | 5                | 1.5 | 1   | 2    | ... |
-    | 1     | foo       | 2002 | ["alpha", "beta"]  | 5                | 8   | 7   | 8.5  | ... |
-    | 2     | bar       | 2002 | ["gamma", "delta"] | 5                | 14  | 12  | 17   | ... |
+    +-------+-----------+------+---------------------+------------------+-----+-----+------+-----+
+    | index | parameter | year | classification      | uncertainty code | loc | low | high | ... |
+    +=======+===========+======+=====================+==================+=====+=====+======+=====+
+    | 0     | foo       | 2001 | ["alpha", "beta"]   | 5                | 1.5 | 1   | 2    | ... |
+    +-------+-----------+------+---------------------+------------------+-----+-----+------+-----+
+    | 1     | foo       | 2002 | ["alpha", "beta"]   | 5                | 8   | 7   | 8.5  | ... |
+    +-------+-----------+------+---------------------+------------------+-----+-----+------+-----+
+    | 2     | bar       | 2002 | ["gamma", "delta"]  | 5                | 14  | 12  | 17   | ... |
+    +-------+-----------+------+---------------------+------------------+-----+-----+------+-----+
+
 
     Instead of `loc`, `low`, `high`, other statistical measures can be provided for each year.
-    Compare the `stats_arrays` table for more details:
-    https://stats-arrays.readthedocs.io/en/latest/index.html#mapping-parameter-array-columns-to-uncertainty-distributions
-
+    Compare the ``stats_arrays` table <https://stats-arrays.readthedocs.io/en/latest/index.html#mapping-parameter-array-columns-to-uncertainty-distributions>`
+    for more details.
+    
     Parameters
     ----------
     excel_input : pathlib.PurePath
         The path to the Excel file.
+
+    uncertainty_col : str
+        The name of the column containing the string description of the uncertainty distributions.
+
+    uncertainty_dict : dict
+        The dictionary containing the mapping between the string description of the uncertainty distributions and the `stats_arrays` integer codes.
+
+    list_string_cols : list
+        The list of column names containing string enumerations.
 
     Returns
     -------
@@ -325,6 +361,9 @@ def load_data_from_excel(
     ------
     TypeError
         If the input is not a `pathlib.PurePath` to an Excel file.
+
+    Exception
+        If the conversion of the string description of the uncertainty distributions to integer codes fails.
     """
 
     if isinstance(excel_input, pathlib.PurePath):
@@ -334,6 +373,7 @@ def load_data_from_excel(
 
     df = _load_excel(excel_input)
     df = _set_dataframe_indices(df)
+    df = _stack_dataframe(df)
     df = _uncertainty_distribution_string_to_code(
             df = df,
             uncertainty_col = uncertainty_col,
@@ -343,19 +383,5 @@ def load_data_from_excel(
             df = df,
             list_string_cols = list_string_cols
     )
-    df = _stack_dataframe(df)
 
     return df
-
-
-# %%
-data = {
-    0: ['parameter', '', 'foo', 'bar'],
-    1: ['classification', '', 'alpha, beta', 'gamma, delta'],
-    2: [2001, 'low', 1, np.nan],
-    3: [2001, 'high', 2, np.nan],
-    4: [2002, 'low', 7, 12],
-    5: [2002, 'high', 8, 13],
-}
-
-df = pd.DataFrame(data)

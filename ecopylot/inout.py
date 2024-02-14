@@ -176,8 +176,9 @@ def load_data_from_json(json_input: str | pathlib.PurePath) -> pd.DataFrame:
 
     See Also
     --------
-    _load_json : Unpacks JSON data from a file or a string.
-    _parse_json : Parses JSON data into a Pandas DataFrame.
+    Compare the ``stats_arrays``
+    `table of uncertainty distributrions <https://stats-arrays.readthedocs.io/en/latest/#mapping-parameter-array-columns-to-uncertainty-distributions>`_
+    for more details.
     """
 
     json_data = _load_json(json_input)
@@ -222,104 +223,6 @@ def _load_excel(excel_input: pathlib.PurePath) -> pd.DataFrame:
     )
 
     logging.info(f"Excel data loaded successfully (#rows: {df.shape[0]}, #columns: {df.shape[1]}, size in memory: {sys.getsizeof(df)} bytes)")
-
-    return df
-
-
-def _columns_string_to_list(df: pd.DataFrame, list_string_cols: list) -> pd.DataFrame:
-    """
-    Converts the content of columns containing string enumerations to lists.
-
-    The function converts the content of columns containing string enumerations of the form:
-
-    `alpha, beta`
-    
-    into lists of the form:
-
-    `["alpha", "beta"]`
-
-    If the column contains a single value, the function will convert it into a list with a single element.
-    If the data type of the column is not a string, the function will leave it unchanged.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        The DataFrame containing the data.
-    
-    list_string_cols : list
-        The list of column names containing string enumerations.
-
-    Returns
-    -------
-    pd.DataFrame
-        The DataFrame with the content of the columns containing string enumerations converted to lists.
-    """
-    for col in list_string_cols:
-        df[col] = df[col].apply(
-            lambda x:
-            [item.strip() for item in x.split(',')]
-            if isinstance(x, str) else x
-        )
-
-    logging.info(f"Columns {list_string_cols} converted to lists.")
-
-    return df
-
-
-def _uncertainty_distribution_string_to_code(
-        df: pd.DataFrame,
-        uncertainty_col: str,
-        uncertainty_dict: dict
-    ) -> pd.DataFrame:
-    """
-    Converts the string description of uncertainty distributions to `stats_arrays` integer codes.
-
-    The function converts the string description of uncertainty distributions
-    in a dataframe column `uncertainty_col` of the form:
-
-    | uncertainty_col | ... |
-    |-----------------|-----|
-    | triangular      | ... |
-    | normal          | ... |
-
-    into `stats_arrays` integer codes in a new column `uncertainty` of the form:
-
-    | uncertainty_col | uncertainty | ... |
-    |-----------------|-------------|-----|
-    | triangular      | 5           | ... |
-    | normal          | 3           | ... |
-
-    The dictionary `uncertainty_dict` is expected to contain
-    the mapping between the string description of
-    the uncertainty distributions and the `stats_arrays` integer codes.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        The DataFrame containing the data.
-
-    uncertainty_col : str
-        The name of the column containing the string description of the uncertainty distributions.
-
-    uncertainty_dict : dict
-        The dictionary containing the mapping between the string description of the uncertainty distributions and the `stats_arrays` integer codes.
-
-    Returns
-    -------
-    pd.DataFrame
-        The DataFrame with the string description of the uncertainty distributions converted to `stats_arrays` integer codes.
-
-    See Also
-    --------
-    ``stats_arrays` list of uncertainty distributions <https://stats-arrays.readthedocs.io/en/latest/#mapping-parameter-array-columns-to-uncertainty-distributions>`__
-
-    """
-    try:
-        df['uncertainty'] = df[uncertainty_col].replace(uncertainty_dict).astype('int64')
-    except ValueError:
-        raise Exception("Conversion of uncertainty string desciption to integer code failed. Are your strings valid 'stats_arrays' uncertainty distribution names?")
-
-    logging.info(f"Column {uncertainty_col} converted to `stats_arrays` integer codes.")
 
     return df
 
@@ -460,6 +363,104 @@ def _stack_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _columns_string_to_list(df: pd.DataFrame, list_string_cols: list) -> pd.DataFrame:
+    """
+    Converts the content of columns containing string enumerations to lists.
+
+    The function converts the content of columns containing string enumerations of the form:
+
+    `alpha, beta`
+    
+    into lists of the form:
+
+    `["alpha", "beta"]`
+
+    If the column contains a single value, the function will convert it into a list with a single element.
+    If the data type of the column is not a string, the function will leave it unchanged.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The DataFrame containing the data.
+    
+    list_string_cols : list
+        The list of column names containing string enumerations.
+
+    Returns
+    -------
+    pd.DataFrame
+        The DataFrame with the content of the columns containing string enumerations converted to lists.
+    """
+    for col in list_string_cols:
+        df[col] = df[col].apply(
+            lambda x:
+            [item.strip() for item in x.split(',')]
+            if isinstance(x, str) else x
+        )
+
+    logging.info(f"Columns {list_string_cols} converted to lists.")
+
+    return df
+
+
+def _uncertainty_distribution_string_to_code(
+        df: pd.DataFrame,
+        uncertainty_col: str,
+        uncertainty_dict: dict
+    ) -> pd.DataFrame:
+    """
+    Converts the string description of uncertainty distributions to `stats_arrays` integer codes.
+
+    The function converts the string description of uncertainty distributions
+    in a dataframe column `uncertainty_col` of the form:
+
+    | uncertainty_col | ... |
+    |-----------------|-----|
+    | triangular      | ... |
+    | normal          | ... |
+
+    into `stats_arrays` integer codes in a new column `uncertainty` of the form:
+
+    | uncertainty_col | uncertainty | ... |
+    |-----------------|-------------|-----|
+    | triangular      | 5           | ... |
+    | normal          | 3           | ... |
+
+    The dictionary `uncertainty_dict` is expected to contain
+    the mapping between the string description of
+    the uncertainty distributions and the `stats_arrays` integer codes.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The DataFrame containing the data.
+
+    uncertainty_col : str
+        The name of the column containing the string description of the uncertainty distributions.
+
+    uncertainty_dict : dict
+        The dictionary containing the mapping between the string description of the uncertainty distributions and the `stats_arrays` integer codes.
+
+    Returns
+    -------
+    pd.DataFrame
+        The DataFrame with the string description of the uncertainty distributions converted to `stats_arrays` integer codes.
+
+    See Also
+    --------
+    ``stats_arrays` list of uncertainty distributions <https://stats-arrays.readthedocs.io/en/latest/#mapping-parameter-array-columns-to-uncertainty-distributions>`__
+
+    """
+    try:
+        df['uncertainty'] = df[uncertainty_col].replace(uncertainty_dict).astype('int64')
+    except ValueError:
+        raise Exception("Conversion of uncertainty string desciption to integer code failed. Are your strings valid 'stats_arrays' uncertainty distribution names?")
+
+    logging.info(f"Column {uncertainty_col} converted to `stats_arrays` integer codes.")
+
+    return df
+
+
 def load_data_from_excel(
         excel_input: pathlib.PurePath,
         uncertainty_col: str,
@@ -467,10 +468,11 @@ def load_data_from_excel(
         list_string_cols: list
     ) -> pd.DataFrame:
     """
-    Loads data from an Excel `xls` or `xlsx` file into a DataFrame.
+    Loads data from an Excel ``xls`` or ``xlsx`` file into a DataFrame.
 
     The function converts an Excel file containing data into a
-    Pandas DataFrame, using the `stack` function to make it long-form.
+    Pandas DataFrame, using the ``stack`` function to make it long-form.
+    It additionally converts the content of some columns.
     
     The Excel sheet is expected to be of the form:
     
@@ -486,7 +488,6 @@ def load_data_from_excel(
     | 4     | bar         | gamma, delta   | triangular         |      |      |      | 14   | 12   | 17   | ... |
     +-------+-------------+----------------+--------------------+------+------+------+------+------+------+-----+
 
-
     The function will return a DataFrame of the form:
 
     +-------+-----------+------+---------------------+------------------+-----+-----+------+-----+
@@ -499,10 +500,7 @@ def load_data_from_excel(
     | 2     | bar       | 2002 | ["gamma", "delta"]  | 5                | 14  | 12  | 17   | ... |
     +-------+-----------+------+---------------------+------------------+-----+-----+------+-----+
 
-
-    Instead of `loc`, `low`, `high`, other statistical measures can be provided for each year.
-    Compare the ``stats_arrays` table <https://stats-arrays.readthedocs.io/en/latest/index.html#mapping-parameter-array-columns-to-uncertainty-distributions>`
-    for more details.
+    Instead of ``loc``, ``low``, ``high``, other statistical measures can be provided for each year.
     
     Parameters
     ----------
@@ -513,7 +511,7 @@ def load_data_from_excel(
         The name of the column containing the string description of the uncertainty distributions.
 
     uncertainty_dict : dict
-        The dictionary containing the mapping between the string description of the uncertainty distributions and the `stats_arrays` integer codes.
+        The dictionary containing the mapping between the string description of the uncertainty distributions and the ``stats_arrays`` integer codes.
 
     list_string_cols : list
         The list of column names containing string enumerations.
@@ -526,10 +524,16 @@ def load_data_from_excel(
     Raises
     ------
     TypeError
-        If the input is not a `pathlib.PurePath` to an Excel file.
+        If the input is not a ``pathlib.PurePath`` to an Excel file.
 
     Exception
         If the conversion of the string description of the uncertainty distributions to integer codes fails.
+
+    See Also
+    --------
+    Compare the ``stats_arrays``
+    `table of uncertainty distributrions <https://stats-arrays.readthedocs.io/en/latest/#mapping-parameter-array-columns-to-uncertainty-distributions>`_
+    for more details.
     """
 
     if isinstance(excel_input, pathlib.PurePath):
